@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cool Voice AI Tool</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #121212;
+            color: #00ff00;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        h1 {
+            color: #00ffff;
+            text-shadow: 0 0 10px #00ffff;
+        }
+        
+        .container {
+            background-color: #222;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 0 20px #00ff00;
+            margin-top: 20px;
+        }
+        
+        button {
+            background-color: #0055ff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        
+        button:hover {
+            background-color: #00aaff;
+            transform: scale(1.05);
+        }
+        
+        #output {
+            background-color: #333;
+            min-height: 100px;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+            text-align: left;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+        }
+        
+        #voiceSelect {
+            padding: 8px;
+            border-radius: 5px;
+            background-color: #333;
+            color: white;
+            margin: 10px;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .status {
+            color: #ff9900;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <h1>Cool Boy's Voice AI Tool</h1>
+    
+    <div class="container">
+        <h2>Voice Recognition</h2>
+        <button id="startListening">Start Listening</button>
+        <button id="stopListening" class="hidden">Stop Listening</button>
+        <p class="status" id="listeningStatus">Ready to listen</p>
+        
+        <div id="output">Your voice input will appear here...</div>
+        
+        <h2>Text to Speech</h2>
+        <textarea id="textToSpeak" rows="4" cols="50" placeholder="Enter text to speak..." style="width: 90%; padding: 10px; background-color: #333; color: white; border: 1px solid #00ff00;"></textarea>
+        <br>
+        <select id="voiceSelect"></select>
+        <button id="speakButton">Speak</button>
+        <button id="funnyVoice">Funny Voice</button>
+        <button id="robotVoice">Robot Voice</button>
+    </div>
+    
+    <script>
+        // Voice recognition
+        const startListeningBtn = document.getElementById('startListening');
+        const stopListeningBtn = document.getElementById('stopListening');
+        const listeningStatus = document.getElementById('listeningStatus');
+        const outputDiv = document.getElementById('output');
+        
+        // Text to speech
+        const textToSpeak = document.getElementById('textToSpeak');
+        const voiceSelect = document.getElementById('voiceSelect');
+        const speakButton = document.getElementById('speakButton');
+        const funnyVoiceBtn = document.getElementById('funnyVoice');
+        const robotVoiceBtn = document.getElementById('robotVoice');
+        
+        let recognition;
+        let voices = [];
+        
+        // Check for browser support
+        if (!('webkitSpeechRecognition' in window) && !('speechRecognition' in window)) {
+            outputDiv.innerHTML = "Speech recognition not supported in this browser. Try Chrome or Edge.";
+            startListeningBtn.disabled = true;
+        } else {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            
+            recognition.onstart = function() {
+                listeningStatus.textContent = "Listening... Speak now!";
+                startListeningBtn.classList.add('hidden');
+                stopListeningBtn.classList.remove('hidden');
+            };
+            
+            recognition.onerror = function(event) {
+                listeningStatus.textContent = "Error occurred: " + event.error;
+                startListeningBtn.classList.remove('hidden');
+                stopListeningBtn.classList.add('hidden');
+            };
+            
+            recognition.onend = function() {
+                listeningStatus.textContent = "Ready to listen";
+                startListeningBtn.classList.remove('hidden');
+                stopListeningBtn.classList.add('hidden');
+            };
+            
+            recognition.onresult = function(event) {
+                let interimTranscript = '';
+                let finalTranscript = '';
+                
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    const transcript = event.results[i][0].transcript;
+                    if (event.results[i].isFinal) {
+                        finalTranscript += transcript;
+                    } else {
+                        interimTranscript += transcript;
+                    }
+                }
+                
+                outputDiv.innerHTML = `<strong>You said:</strong> ${finalTranscript}<br><em>${interimTranscript}</em>`;
+                
+                // Add some fun responses
+                if (finalTranscript.toLowerCase().includes('hello')) {
+                    speak("Hello back at you, dude!");
+                } else if (finalTranscript.toLowerCase().includes('how are you')) {
+                    speak("I'm just a program, but I'm feeling awesome!");
+                } else if (finalTranscript.toLowerCase().includes('your name')) {
+                    speak("I'm the coolest voice AI tool for boys!");
+                }
+            };
+        }
+        
+        startListeningBtn.addEventListener('click', function() {
+            recognition.start();
+        });
+        
+        stopListeningBtn.addEventListener('click', function() {
+            recognition.stop();
+        });
+        
+        // Text to speech functions
+        function populateVoiceList() {
+            voices = speechSynthesis.getVoices();
+            voiceSelect.innerHTML = '';
+            
+            voices.forEach(function(voice, i) {
+                const option = document.createElement('option');
+                option.textContent = voice.name + ' (' + voice.lang + ')';
+                option.setAttribute('data-lang', voice.lang);
+                option.setAttribute('data-name', voice.name);
+                voiceSelect.appendChild(option);
+            });
+        }
+        
+        populateVoiceList();
+        if (speechSynthesis.onvoiceschanged !== undefined) {
+            speechSynthesis.onvoiceschanged = populateVoiceList;
+        }
+        
+        function speak(text) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            const selectedOption = voiceSelect.selectedOptions[0].getAttribute('data-name');
+            
+            voices.forEach(function(voice) {
+                if (voice.name === selectedOption) {
+                    utterance.voice = voice;
+                }
+            });
+            
+            speechSynthesis.speak(utterance);
+        }
+        
+        speakButton.addEventListener('click', function() {
+            if (textToSpeak.value.trim() !== '') {
+                speak(textToSpeak.value);
+            }
+        });
+        
+        funnyVoiceBtn.addEventListener('click', function() {
+            const utterance = new SpeechSynthesisUtterance(textToSpeak.value || "This is my funny voice!");
+            utterance.pitch = 1.5;
+            utterance.rate = 1.2;
+            speechSynthesis.speak(utterance);
+        });
+        
+        robotVoiceBtn.addEventListener('click', function() {
+            const utterance = new SpeechSynthesisUtterance(textToSpeak.value || "I am a robot. Beep boop.");
+            utterance.pitch = 0.5;
+            utterance.rate = 0.8;
+            speechSynthesis.speak(utterance);
+        });
+        
+        // Add some fun commands
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'Enter') {
+                speak("Secret command activated! You're awesome!");
+            }
+        });
+    </script>
+</body>
+</html>
